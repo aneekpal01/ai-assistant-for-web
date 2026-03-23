@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Ani — AI Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0a0a0f;font-family:'Inter',sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:16px}
+  #app{width:100%;max-width:680px;background:#0d0d16;border:0.5px solid rgba(0,229,255,0.15);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;height:90vh;max-height:700px;position:relative}
+  .scan-line{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(0,229,255,0.5),transparent);animation:scan 5s linear infinite;pointer-events:none;z-index:10}
+  @keyframes scan{0%{top:0}100%{top:100%}}
+  .header{padding:16px 20px;border-bottom:0.5px solid rgba(0,229,255,0.12);display:flex;align-items:center;gap:12px;background:rgba(0,0,0,0.4);flex-shrink:0}
+  .avatar{width:42px;height:42px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#00e5ff,#0055bb);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-weight:700;font-size:16px;color:#fff;animation:glow 3s ease-in-out infinite;flex-shrink:0}
+  @keyframes glow{0%,100%{box-shadow:0 0 10px rgba(0,229,255,0.4)}50%{box-shadow:0 0 22px rgba(0,229,255,0.75)}}
+  .title{font-family:'Orbitron',monospace;font-size:17px;font-weight:700;color:#00e5ff;letter-spacing:3px}
+  .subtitle{font-size:11px;color:rgba(0,229,255,0.45);letter-spacing:1px;margin-top:2px}
+  .status{width:8px;height:8px;border-radius:50%;background:#00ff88;margin-left:auto;animation:blink 2s ease-in-out infinite;box-shadow:0 0 6px rgba(0,255,136,0.6)}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.35}}
+  .api-bar{padding:12px 20px;background:rgba(66,133,244,0.06);border-bottom:0.5px solid rgba(66,133,244,0.18);flex-shrink:0}
+  .api-bar label{font-size:10px;color:rgba(130,180,255,0.6);letter-spacing:1px;display:block;margin-bottom:5px}
+  .api-bar input{width:100%;background:rgba(255,255,255,0.05);border:0.5px solid rgba(66,133,244,0.28);border-radius:6px;padding:7px 12px;color:#fff;font-size:13px;font-family:monospace;outline:none;transition:border-color 0.2s}
+  .api-bar input:focus{border-color:rgba(66,133,244,0.6)}
+  .api-hint{font-size:10px;color:rgba(130,180,255,0.38);margin-top:4px}
+  .chat{flex:1;overflow-y:auto;padding:18px 20px;display:flex;flex-direction:column;gap:14px;scrollbar-width:thin;scrollbar-color:rgba(0,229,255,0.15) transparent}
+  .msg{display:flex;gap:9px;align-items:flex-start;animation:fadein 0.3s ease}
+  @keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  .msg.user{flex-direction:row-reverse}
+  .msg-av{width:27px;height:27px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;margin-top:2px;font-weight:500}
+  .msg.ani .msg-av{background:rgba(0,229,255,0.12);color:#00e5ff;border:0.5px solid rgba(0,229,255,0.25)}
+  .msg.user .msg-av{background:rgba(120,80,255,0.18);color:#a78bfa;border:0.5px solid rgba(120,80,255,0.28)}
+  .bubble{max-width:80%;padding:10px 14px;font-size:13.5px;line-height:1.65;white-space:pre-wrap;word-break:break-word}
+  .msg.ani .bubble{background:rgba(0,229,255,0.07);border:0.5px solid rgba(0,229,255,0.13);color:#c8f4ff;border-radius:4px 12px 12px 12px}
+  .msg.user .bubble{background:rgba(120,80,255,0.14);border:0.5px solid rgba(120,80,255,0.22);color:#e0d4ff;border-radius:12px 4px 12px 12px}
+  .typing{display:flex;gap:4px;align-items:center;padding:4px 0}
+  .typing span{width:6px;height:6px;border-radius:50%;background:#00e5ff;animation:dot 1.2s ease-in-out infinite}
+  .typing span:nth-child(2){animation-delay:0.2s}.typing span:nth-child(3){animation-delay:0.4s}
+  @keyframes dot{0%,100%{opacity:0.3;transform:scale(0.8)}50%{opacity:1;transform:scale(1)}}
+  .input-area{padding:12px 20px 16px;border-top:0.5px solid rgba(0,229,255,0.1);background:rgba(0,0,0,0.45);flex-shrink:0}
+  .input-row{display:flex;gap:8px;align-items:center;background:rgba(255,255,255,0.04);border:0.5px solid rgba(0,229,255,0.18);border-radius:50px;padding:7px 7px 7px 16px;transition:border-color 0.2s}
+  .input-row:focus-within{border-color:rgba(0,229,255,0.45)}
+  .input-row input{flex:1;background:none;border:none;outline:none;color:#e0f4ff;font-size:14px;font-family:'Inter',sans-serif}
+  .input-row input::placeholder{color:rgba(150,210,225,0.3)}
+  .btn{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;transition:all 0.2s;flex-shrink:0;border:0.5px solid}
+  .btn-mic{background:rgba(0,229,255,0.08);border-color:rgba(0,229,255,0.28);color:#00e5ff}
+  .btn-mic:hover{background:rgba(0,229,255,0.18)}
+  .btn-mic.on{background:rgba(255,50,50,0.18);border-color:rgba(255,80,80,0.45);color:#ff6060;animation:pred 1s ease-in-out infinite}
+  @keyframes pred{0%,100%{box-shadow:0 0 0 0 rgba(255,80,80,0.3)}50%{box-shadow:0 0 0 5px rgba(255,80,80,0)}}
+  .btn-send{background:rgba(0,229,255,0.12);border-color:rgba(0,229,255,0.35);color:#00e5ff}
+  .btn-send:hover{background:rgba(0,229,255,0.25)}
+  .quick{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+  .qbtn{font-size:11px;padding:4px 10px;border-radius:20px;background:rgba(120,80,255,0.09);border:0.5px solid rgba(120,80,255,0.22);color:#c4b5fd;cursor:pointer;transition:all 0.15s;font-family:'Inter',sans-serif}
+  .qbtn:hover{background:rgba(120,80,255,0.2)}
+  .vstatus{text-align:center;font-size:11px;color:rgba(0,229,255,0.38);margin-top:7px;letter-spacing:0.5px;min-height:15px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="scan-line"></div>
+  <div class="header">
+    <div class="avatar">A</div>
+    <div>
+      <div class="title">ANI</div>
+      <div class="subtitle">POWERED BY GEMINI — FREE</div>
+    </div>
+    <div class="status"></div>
+  </div>
+  <div class="api-bar">
+    <label>GOOGLE GEMINI API KEY</label>
+    <input type="password" id="apiKey" placeholder="AIza... (yahan paste karo, Enter mat dabao)" />
+    <div class="api-hint">aistudio.google.com → Get API Key → Copy → Yahan paste karo</div>
+  </div>
+  <div class="chat" id="chat">
+    <div class="msg ani">
+      <div class="msg-av">A</div>
+      <div class="bubble">Namaste! Main Ani hun 👋
+API key daalo upar, phir baat karte hain! Hinglish mein bolo — main samjhungi 😊</div>
+    </div>
+  </div>
+  <div class="input-area">
+    <div class="input-row">
+      <input type="text" id="inp" placeholder="Kuch bhi pucho Ani se..." />
+      <button class="btn btn-mic" id="micBtn">🎤</button>
+      <button class="btn btn-send" id="sendBtn">➤</button>
+    </div>
+    <div class="quick">
+      <span class="qbtn" onclick="qs('Tum kaun ho?')">Tum kaun ho?</span>
+      <span class="qbtn" onclick="qs('Ek funny joke sunao')">Joke sunao</span>
+      <span class="qbtn" onclick="qs('Python mein for loop ka example do')">Code do</span>
+      <span class="qbtn" onclick="qs('Aaj productive kaise rahun?')">Tips do</span>
+    </div>
+    <div class="vstatus" id="vs">Voice ready ✓</div>
+  </div>
+</div>
+
+<script>
+const chat = document.getElementById('chat');
+const inp = document.getElementById('inp');
+const micBtn = document.getElementById('micBtn');
+const sendBtn = document.getElementById('sendBtn');
+const vs = document.getElementById('vs');
+const apiKey = document.getElementById('apiKey');
+
+let recOn = false, recog = null;
+let hist = [];
+
+const SYS = `Tum Ani ho — ek smart, friendly AI assistant. Tum Hinglish mein baat karte ho (Hindi + English mix). Tum concise, helpful aur thodi witty ho. Emojis ka thoda use karo. Apna naam poochha jaye to batao tum Ani ho.`;
+
+function addMsg(role, text) {
+  const d = document.createElement('div');
+  d.className = 'msg ' + (role === 'user' ? 'user' : 'ani');
+  const av = document.createElement('div'); av.className = 'msg-av';
+  av.textContent = role === 'user' ? 'Tu' : 'A';
+  const b = document.createElement('div'); b.className = 'bubble';
+  b.textContent = text;
+  d.appendChild(av); d.appendChild(b);
+  chat.appendChild(d);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function addTyping() {
+  const d = document.createElement('div'); d.className = 'msg ani'; d.id = 'typ';
+  d.innerHTML = '<div class="msg-av">A</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>';
+  chat.appendChild(d); chat.scrollTop = chat.scrollHeight;
+}
+function rmTyping() { const t = document.getElementById('typ'); if(t) t.remove(); }
+
+async function send(text) {
+  if (!text.trim()) return;
+  const key = apiKey.value.trim();
+  if (!key) { addMsg('ani', 'Pehle Gemini API key daalo! aistudio.google.com se free mein milegi.'); return; }
+
+  addMsg('user', text);
+  hist.push({ role: 'user', parts: [{ text }] });
+  inp.value = '';
+  addTyping();
+  sendBtn.disabled = true;
+
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: SYS }] },
+        contents: hist,
+        generationConfig: { maxOutputTokens: 800, temperature: 0.85 }
+      })
+    });
+    const data = await res.json();
+    rmTyping();
+    if (data.error) {
+      addMsg('ani', '❌ Error: ' + data.error.message);
+      hist.pop(); return;
+    }
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Kuch samajh nahi aaya, dobara pucho!';
+    hist.push({ role: 'model', parts: [{ text: reply }] });
+    addMsg('ani', reply);
+    speak(reply);
+  } catch(e) {
+    rmTyping();
+    addMsg('ani', '❌ Network error: ' + e.message);
+    hist.pop();
+  } finally {
+    sendBtn.disabled = false;
+  }
+}
+
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(text.replace(/[*_`#]/g,'').substring(0,300));
+  utt.rate = 0.95; utt.pitch = 1.05;
+  const pref = speechSynthesis.getVoices().find(v => v.lang.includes('en-IN') || v.name.includes('Google UK English Female'));
+  if (pref) utt.voice = pref;
+  speechSynthesis.speak(utt);
+}
+
+function qs(t) { inp.value = t; send(t); }
+
+sendBtn.onclick = () => send(inp.value);
+inp.addEventListener('keydown', e => { if(e.key === 'Enter') send(inp.value); });
+
+if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recog = new SR();
+  recog.lang = 'hi-IN'; recog.interimResults = false;
+  recog.onstart = () => vs.textContent = 'Sun rahi hun... bolo! 🎤';
+  recog.onresult = e => {
+    const t = e.results[0][0].transcript;
+    inp.value = t; vs.textContent = 'Suna: ' + t;
+    setTimeout(() => send(t), 300);
+  };
+  recog.onerror = e => { vs.textContent = 'Voice error: ' + e.error; recOn = false; micBtn.classList.remove('on'); };
+  recog.onend = () => { recOn = false; micBtn.classList.remove('on'); if(!inp.value) vs.textContent = 'Voice ready ✓'; };
+  micBtn.onclick = () => {
+    if (!recOn) { recOn = true; micBtn.classList.add('on'); recog.start(); }
+    else { recOn = false; micBtn.classList.remove('on'); recog.stop(); vs.textContent = 'Voice ready ✓'; }
+  };
+} else {
+  micBtn.disabled = true;
+  vs.textContent = 'Voice ke liye Chrome use karo!';
+}
+speechSynthesis?.addEventListener?.('voiceschanged', () => {});
+</script>
+</body>
+</html>
